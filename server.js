@@ -56,6 +56,7 @@ function findUser(id) { return userByEmail(normEmail(id)) || userByName(id); }
 
 /* ---------------- CHATS ---------------- */
 const GENERAL_ID = 'general';
+const ADMIN_USERNAME = normName(process.env.ADMIN_USERNAME || 'lixerdev');
 function ensureGeneral() {
   if (!db.chats[GENERAL_ID]) {
     db.chats[GENERAL_ID] = {
@@ -130,6 +131,7 @@ function publicUser(email) {
     color: u.color,
     avatar: u.avatar || null,
     about: u.about || '',
+    admin: !!u.admin,
     createdAt: u.createdAt,
     online: online.has(email),
   };
@@ -195,7 +197,8 @@ app.post('/api/register', async (req, res) => {
   const user = {
     email, username, salt, pass: hashPass(password, salt),
     color: palette[crypto.randomInt(palette.length)],
-    about: '', avatar: null, createdAt: Date.now(), verified: !SMTP, unread: {},
+    about: '', avatar: null, admin: username === ADMIN_USERNAME,
+    createdAt: Date.now(), verified: !SMTP, unread: {},
   };
   db.users[email] = user;
   ensureGeneral();
@@ -245,6 +248,8 @@ app.post('/api/login', (req, res) => {
   if (!u.verified) return res.json({ needVerify: true, email: u.email });
   res.json({ token: issueToken(u.email), username: u.username });
 });
+
+app.get('/api/me', auth, (req, res) => res.json({ user: publicUser(req.email) }));
 
 app.get('/api/state', auth, (req, res) => {
   const me = req.email;
@@ -416,6 +421,58 @@ app.post('/api/avatar', auth, (req, res) => {
   res.json({ avatar: u.avatar });
 });
 
+/* ---- admin ---- */
+app.get('/api/admin/overview', auth, (req, res) => {
+  const u = db.users[req.email];
+  if (!u?.admin) return res.status(403).json({ error: 'Только для администратора' });
+  const msgCount = {};
+  for (const m of db.messages) msgCount[m.authorEmail] = (msgCount[m.authorEmail] || 0) + 1;
+  res.json({
+    users: Object.keys(db.users).map((e) => ({
+      ...publicUser(e), messages: msgCount[e] || 0,
+    })),
+    chats: Object.values(db.chats).map((c) => ({
+      id: c.id, name: c.name || (c.type === 'dm' ? 'ЛС' : c.id), type: c.type,
+      members: chatMembers(c.id).length, createdBy: db.users[c.createdBy]?.username || null,
+    })),
+    totalMessages: db.messages.length,
+  });
+});
+
+app.post('/api/admin/user/delete', auth, (req, res) => {
+  if (!db.users[req.email]?.admin) return res.status(403).json({ error: 'Только для администратора' });
+  const target = findUser(req.body?.target);
+  if (!target || target.email === req.email) return res.status(400).json({ error: 'Нельзя удалить этого пользователя' });
+  const email = target.email;
+  delete db.users[email];
+  for (const k of Object.keys(db.friends)) if (k.split('|').includes(email)) delete db.friends[k];
+  for (const c of Object.values(db.chats)) {
+    if (c.members && c.members.includes(email)) {
+      c.members = c.members.filter((m) => m !== email);
+      if (c.createdBy === email) c.createdBy = c.members[0] || null;
+    }
+  }
+  db.messages = db.messages.filter((m) => m.authorEmail !== email);
+  try { for (const f of fs.readdirSync(AVATAR_DIR)) if (f.startsWith(email + '.')) fs.unlinkSync(path.join(AVATAR_DIR, f)); } catch {}
+  for (const [t, e] of [...tokens]) if (e === email) tokens.delete(t);
+  io.emit('presence', { email, online: false });
+  saveDb();
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/chat/delete', auth, (req, res) => {
+  if (!db.users[req.email]?.admin) return res.status(403).json({ error: 'Только для администратора' });
+  const c = db.chats[req.body?.id];
+  if (!c) return res.status(400).json({ error: 'Чат не найден' });
+  if (c.id === GENERAL_ID) return res.status(400).json({ error: 'Общий чат удалить нельзя' });
+  const emails = c.type === 'general' ? [] : c.members;
+  delete db.chats[c.id];
+  db.messages = db.messages.filter((m) => m.chat !== c.id);
+  emails.forEach((m) => io.to('u:' + m).emit('chat:deleted', { id: c.id }));
+  saveDb();
+  res.json({ ok: true });
+});
+
 app.get('/api/messages', auth, (req, res) => {
   const me = req.email;
   const id = req.query.chat;
@@ -424,6 +481,8 @@ app.get('/api/messages', auth, (req, res) => {
   const list = db.messages.filter((x) => x.chat === id).slice(-300);
   res.json({ messages: list, members: chatMembers(id) });
 });
+
+app.use('/api', (req, res) => res.status(404).json({ error: 'not found' }));
 
 /* ---------------- SOCKET ---------------- */
 const server = http.createServer(app);

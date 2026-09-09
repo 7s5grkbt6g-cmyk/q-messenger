@@ -467,7 +467,7 @@ function appendMessage(msg) {
   wrap.innerHTML = `
     ${multi && !mine ? `<div class="msg-ava">${ravatar(msg.authorEmail, 'xs')}</div>` : ''}
     <div class="bubble${grouped ? '' : ' msg-group'}">
-      ${multi && !mine && !grouped ? `<div class="msg-author" style="color:${colorOf(msg.authorEmail)}">${esc(msg.author)}</div>` : ''}
+      ${multi && !mine && !grouped ? `<div class="msg-author" style="color:${colorOf(msg.authorEmail)}">${esc(msg.author)}${byEmail(msg.authorEmail).admin ? ' <span class="crown">👑</span>' : ''}</div>` : ''}
       <span class="msg-text">${esc(msg.text)}</span>${meta}
     </div>`;
   if (!grouped) wrap.style.marginTop = multi ? '10px' : '8px';
@@ -638,13 +638,15 @@ $('burgerBtn').onclick = (e) => {
   e.stopPropagation();
   const ctx = $('ctx');
   ctx.innerHTML = `<div class="contact-row" style="padding:4px 2px 10px">${ravatar(state.me.email, '', { dot: true })}
-      <div><div class="contact-name">${esc(state.me.username)}</div>
-      <div class="contact-sub">${esc(state.me.email)}</div></div></div>
+      <div><div class="contact-name">${esc(state.me.username)}${state.me.admin ? ' <span class="crown">👑</span>' : ''}</div>
+      <div class="contact-sub">@${esc(state.me.username)}</div></div></div>
     <div class="ctx-actions">
       <button class="tlink" data-sact="settings">⚙️ Мои настройки</button>
       <button class="tlink" data-sact="contacts">👥 Контакты</button>
+      ${state.me.admin ? '<button class="tlink" data-sact="admin">👑 Админ-панель</button>' : ''}
       <button class="tlink" data-sact="logout">🚪 Выйти</button>
-    </div>`;
+    </div>
+    <div class="menu-author">Q-Messenger · автор: <b>LixerDEV</b></div>`;
   const r = $('burgerBtn').getBoundingClientRect();
   ctx.classList.remove('hidden');
   ctx.style.left = r.left + 'px';
@@ -656,7 +658,76 @@ $('ctx').addEventListener('click', (e) => {
   $('ctx').classList.add('hidden');
   if (btn.dataset.sact === 'settings') openSettings();
   if (btn.dataset.sact === 'contacts') { $('contactModal').classList.remove('hidden'); tab = 'list'; setTab(); renderContacts(); }
+  if (btn.dataset.sact === 'admin') openAdmin();
   if (btn.dataset.sact === 'logout') $('logoutBtn').click();
+});
+
+/* ================= ADMIN ================= */
+let atab = 'users';
+let adminData = null;
+async function openAdmin() {
+  try {
+    adminData = await api('/api/admin/overview');
+    $('adminModal').classList.remove('hidden');
+    renderAdmin();
+  } catch (err) { toast(esc(err.message)); }
+}
+$('adminBack').onclick = () => $('adminModal').classList.add('hidden');
+$('adminModal').addEventListener('mousedown', (e) => { if (e.target === $('adminModal')) $('adminModal').classList.add('hidden'); });
+document.querySelectorAll('.stab[data-atab]').forEach((b) => (b.onclick = () => {
+  atab = b.dataset.atab;
+  document.querySelectorAll('.stab[data-atab]').forEach((x) => x.classList.toggle('active', x === b));
+  renderAdmin();
+}));
+
+async function renderAdmin() {
+  if (!adminData) return;
+  const body = $('adminBody');
+  const stats = `<div class="admin-stats">
+    <div class="ast"><b>${adminData.users.length}</b><span>пользователей</span></div>
+    <div class="ast"><b>${adminData.chats.length}</b><span>чатов</span></div>
+    <div class="ast"><b>${adminData.totalMessages}</b><span>сообщений</span></div>
+  </div>`;
+  if (atab === 'users') {
+    body.innerHTML = stats + adminData.users.map((u) => `
+      <div class="contact-row">
+        ${ravatar(u.email, 'sm')}
+        <div style="min-width:0">
+          <div class="contact-name">${esc(u.username)}${u.admin ? ' <span class="crown">👑</span>' : ''}${u.online ? ' <span class="on-dot"></span>' : ''}</div>
+          <div class="contact-sub">${u.messages} сообщ. · ${new Date(u.createdAt).toLocaleDateString('ru-RU')}</div>
+        </div>
+        <div class="contact-act">${!u.admin && !isMe(u.email) ? `<button class="tlink danger" data-aact="udel" data-e="${u.email}">Удалить</button>` : ''}</div>
+      </div>`).join('');
+  } else {
+    body.innerHTML = stats + adminData.chats.map((c) => `
+      <div class="contact-row">
+        <div style="min-width:0">
+          <div class="contact-name">${esc(c.name)}${c.id === 'general' ? ' 🌍' : ''}</div>
+          <div class="contact-sub">${c.type} · ${c.members} участник(ов)${c.createdBy ? ' · создатель ' + esc(c.createdBy) : ''}</div>
+        </div>
+        <div class="contact-act">${c.id !== 'general' ? `<button class="tlink danger" data-aact="cdel" data-i="${c.id}">Удалить</button>` : ''}</div>
+      </div>`).join('');
+  }
+}
+$('adminBody').addEventListener('click', async (e) => {
+  const btn = e.target.closest('[data-aact]');
+  if (!btn) return;
+  try {
+    if (btn.dataset.aact === 'udel') {
+      if (!confirm('Удалить пользователя и все его данные?')) return;
+      await api('/api/admin/user/delete', { method: 'POST', body: { target: btn.dataset.e } });
+    } else if (btn.dataset.aact === 'cdel') {
+      if (!confirm('Удалить чат и все его сообщения?')) return;
+      await api('/api/admin/chat/delete', { method: 'POST', body: { id: btn.dataset.i } });
+    }
+    adminData = await api('/api/admin/overview');
+    renderAdmin();
+    const s = await api('/api/state');
+    state.chats = s.chats;
+    state.users = {};
+    (await api('/api/users')).users.forEach((x) => (state.users[x.email] = x));
+    renderList();
+  } catch (err) { toast(esc(err.message)); }
 });
 
 function openSettings() {
@@ -745,8 +816,8 @@ function row(email, actions) {
   return `<div class="contact-row">
     ${ravatar(email, '', { dot: true })}
     <div style="min-width:0">
-      <div class="contact-name">${esc(u.username || email)}</div>
-      <div class="contact-sub">${u.online ? 'в сети' : esc(u.email || '')}</div>
+      <div class="contact-name">${esc(u.username || email)}${u.admin ? ' <span class="crown">👑</span>' : ''}</div>
+      <div class="contact-sub">${u.online ? 'в сети' : 'не в сети'}</div>
     </div>
     <div class="contact-act">${actions}</div>
   </div>`;

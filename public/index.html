@@ -40,6 +40,7 @@
     <div class="auth-switch" id="switchWrap">
       <span id="switchText">На аккаунте ещё нет?</span> <a href="#" id="authToggle">Создать аккаунт</a>
     </div>
+    <div class="auth-author">Разработчик — <b>LixerDEV</b></div>
   </div>
 </div>
 
@@ -203,6 +204,21 @@
     <button class="call-btn decline hidden" id="declineBtn" title="Отклонить">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="transform:rotate(135deg)"><path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24 11.36 11.36 0 0 0 3.57.57 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 4a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.25.2 2.45.57 3.57a1 1 0 0 1-.25 1.02l-2.2 2.2Z"/></svg>
     </button>
+  </div>
+</div>
+
+<!-- admin -->
+<div class="modal-back hidden" id="adminModal">
+  <div class="modal modal-wide">
+    <div class="modal-head">
+      <button class="tg-icon" id="adminBack"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2Z"/></svg></button>
+      <div class="modal-title">👑 Админ-панель</div>
+      <div class="seg-tabs">
+        <button class="stab active" data-atab="users">Пользователи</button>
+        <button class="stab" data-atab="chats">Чаты</button>
+      </div>
+    </div>
+    <div class="modal-body" id="adminBody"></div>
   </div>
 </div>
 
