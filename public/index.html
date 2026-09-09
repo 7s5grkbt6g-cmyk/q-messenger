@@ -5,92 +5,113 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Q-Messenger</title>
 <link rel="stylesheet" href="style.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%237c3aed'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>Q</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%233390ec'/><path d='M25 50 75 28 66 72 50 60 38 68 44 55Z' fill='white'/></svg>">
 </head>
 <body>
 
-<!-- AUTH -->
+<!-- ============ AUTH ============ -->
 <div id="auth" class="auth-screen">
   <div class="auth-card">
-    <div class="logo"><span class="logo-badge">Q</span><h1>Q-Messenger</h1></div>
-    <p class="auth-sub">Твоё пространство для общения ✦</p>
+    <div class="tg-logo">
+      <svg viewBox="0 0 120 120" width="88" height="88"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#37aee2"/><stop offset="1" stop-color="#1e96c8"/></linearGradient></defs><circle cx="60" cy="60" r="60" fill="url(#g)"/><path d="M26 59 92 32c2-.8 3.6.4 3 3.4L83.6 92c-.6 2.6-2.2 3.3-4.4 2l-14.4-11-7 6.8c-.8.8-1.4 1.4-2.8 1.4l1-14.2L77 45.6c1-1-.4-1.6-1.6-.6L46.8 66l-14-4.4c-3-1-3.1-3 .7-4.5z" fill="#fff"/></svg>
+    </div>
+    <div class="auth-title" id="authTitle">Войдите в Q-Messenger</div>
+    <div class="auth-hint" id="authHint">Укажите email и пароль</div>
+
     <form id="authForm">
-      <label>Имя пользователя</label>
-      <input id="authUser" type="text" placeholder="например, cool_guy" autocomplete="username" maxlength="20">
+      <div id="regNameWrap" class="hidden">
+        <label>Имя пользователя</label>
+        <input id="fUsername" type="text" placeholder="username" autocomplete="off" maxlength="20">
+      </div>
+      <label>Электронная почта</label>
+      <input id="fEmail" type="email" placeholder="you@example.com" autocomplete="username">
       <label>Пароль</label>
-      <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      <input id="fPassword" type="password" placeholder="Пароль" autocomplete="current-password">
       <div class="auth-error" id="authError"></div>
-      <button type="submit" class="btn-primary" id="authBtn">Войти</button>
+      <button type="submit" class="tg-btn" id="authBtn">Войти</button>
     </form>
-    <div class="auth-switch">Нет аккаунта? <a href="#" id="authToggle">Создать</a></div>
+
+    <form id="verifyForm" class="hidden">
+      <div class="verify-email" id="verifyEmail"></div>
+      <label>Код из письма — 6 цифр</label>
+      <input id="fCode" type="text" inputmode="numeric" maxlength="6" placeholder="000000" autocomplete="one-time-code">
+      <div class="auth-error" id="verifyError"></div>
+      <button type="submit" class="tg-btn">Подтвердить</button>
+      <div class="auth-switch" style="margin-top:14px"><a href="#" id="resendLink">Отправить код ещё раз</a></div>
+    </form>
+
+    <div class="auth-switch" id="switchWrap">
+      <span id="switchText">На аккаунте ещё нет?</span> <a href="#" id="authToggle">Создать аккаунт</a>
+    </div>
   </div>
 </div>
 
-<!-- APP -->
+<!-- ============ APP ============ -->
 <div id="app" class="app hidden">
-  <aside class="rail">
-    <div class="rail-logo">Q</div>
-    <div class="rail-sep"></div>
-    <button class="rail-ch active" data-ch="general" title="#general">#</button>
-    <button class="rail-ch" data-ch="gaming" title="#gaming">#</button>
-    <button class="rail-ch" data-ch="random" title="#random">#</button>
-    <div class="rail-spacer"></div>
-    <button class="rail-btn" id="openFriends" title="Друзья">
-      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-9 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0 1.5c-2.33 0-7 1.17-7 3.5V20h14v-3c0-2.33-4.67-3.5-7-3.5Zm9-.3c-.29 0-.62.02-.97.06 1.16.84 1.97 2.03 1.97 3.74V20H24v-2.5c0-2.17-4.34-3.3-6.5-3.3Z"/></svg>
-      <span class="rail-badge hidden" id="reqBadge"></span>
-    </button>
-    <div class="rail-me" id="railMe" title=""></div>
-  </aside>
-
+  <!-- chat list -->
   <aside class="sidebar">
-    <div class="sidebar-head" id="sideTitle">Текстовые каналы</div>
-    <div class="sidebar-body" id="sideBody"></div>
-    <div class="userbar">
-      <div class="avatar" id="meAvatar"></div>
-      <div class="userbar-info">
-        <div class="userbar-name" id="meName"></div>
-        <div class="userbar-status">В сети</div>
+    <div class="sb-top">
+      <div class="burger" title="Q-Messenger">Q</div>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.49 4.49 0 0 1 9.5 14Z"/></svg>
+        <input id="chatSearch" placeholder="Поиск" autocomplete="off">
       </div>
-      <button class="icon-btn" id="logoutBtn" title="Выйти">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5ZM4 5v14h8v2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8v2H4v14Z" transform="scale(0.9) translate(1.5 1)"/></svg>
-      </button>
     </div>
+    <div class="chat-list" id="chatList"></div>
   </aside>
 
+  <!-- chat -->
   <main class="chat">
     <header class="chat-head">
-      <div class="chat-title" id="chatTitle"># general</div>
-      <div class="chat-topic" id="chatTopic"></div>
+      <div class="ch-avatar" id="headAvatar"></div>
+      <div class="ch-titles">
+        <div class="ch-name" id="headName"></div>
+        <div class="ch-status" id="headStatus"></div>
+      </div>
+      <button class="tg-icon" id="themeBtn" title="Тема">
+        <svg id="themeIcon" viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm-7 4H2a1 1 0 1 1 0 2h3a1 1 0 1 1 0-2Zm17 0h-3a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2Zm-8-7V1a1 1 0 1 0-2 0v3a1 1 0 1 0 2 0Zm0 17v3a1 1 0 1 0 2 0v-3a1 1 0 1 0-2 0ZM5.05 6.46 2.81 4.22a1 1 0 0 1 1.41-1.41l2.24 2.24a1 1 0 0 1-1.41 1.41Zm13.9 11.08 2.24 2.24a1 1 0 0 1-1.41 1.41l-2.24-2.24a1 1 0 0 1 1.41-1.41ZM4.22 19.8l2.24-2.24a1 1 0 1 1 1.41 1.41l-2.24 2.24a1 1 0 1 1-1.41-1.41ZM19.8 5.64l-2.24 2.24a1 1 0 0 1-1.41-1.41l2.24-2.24a1 1 0 1 1 1.41 1.41Z"/></svg>
+      </button>
+      <button class="tg-icon" id="contactBtn" title="Контакты">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M15 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm-9-1a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm9 2c-2.33 0-7 1.17-7 3.5V19h14v-1.5c0-2.33-4.67-3.5-7-3.5Zm-9 1c-2.18 0-6 1.1-6 3.3V19h6v-1.5c0-1.34.72-2.55 1.89-3.52A13 13 0 0 0 6 15Z"/></svg>
+        <span class="tbadge hidden" id="reqBadge"></span>
+      </button>
+      <button class="tg-icon" id="logoutBtn" title="Выйти">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5ZM4 5v14c0 1.1.9 2 2 2h7v-2H6V5h7V3H6c-1.1 0-2 .9-2 2Z"/></svg>
+      </button>
     </header>
+
     <div class="messages" id="messages"></div>
+    <div class="typing-row" id="typingRow"></div>
+
     <div class="composer">
-      <input id="input" type="text" placeholder="Написать сообщение…" maxlength="2000" autocomplete="off">
-      <button id="sendBtn" class="send-btn" title="Отправить">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2v7z"/></svg>
+      <div class="comp-field">
+        <input id="input" placeholder="Сообщение" maxlength="2000" autocomplete="off">
+      </div>
+      <button class="send-btn" id="sendBtn" title="Отправить">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M2 21 23 12 2 3 2 10l15 2-15 2v7z" fill="currentColor"/></svg>
       </button>
     </div>
   </main>
+</div>
 
-  <aside class="members" id="members"></aside>
-
-  <!-- Friends overlay -->
-  <div class="overlay hidden" id="friendsOverlay">
-    <div class="friends-panel">
-      <div class="friends-head">
-        <h2>Друзья</h2>
-        <div class="friend-tabs">
-          <button class="ftab active" data-tab="all">Все</button>
-          <button class="ftab" data-tab="pending">Ожидания <span id="pendCount"></span></button>
-          <button class="ftab" data-tab="add">Добавить друга</button>
-        </div>
-        <button class="icon-btn" id="closeFriends">✕</button>
+<!-- ============ CONTACTS MODAL ============ -->
+<div class="modal-back hidden" id="contactModal">
+  <div class="modal">
+    <div class="modal-head">
+      <button class="tg-icon" id="contactBack"><svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2Z"/></svg></button>
+      <div class="modal-title">Контакты</div>
+      <div class="seg-tabs">
+        <button class="stab active" data-tab="list">Мои</button>
+        <button class="stab" data-tab="req">Заявки <span id="pendCount"></span></button>
+        <button class="stab" data-tab="add">Добавить</button>
       </div>
-      <div class="friends-body" id="friendsBody"></div>
     </div>
+    <div class="modal-body" id="contactBody"></div>
   </div>
 </div>
 
 <div class="toasts" id="toasts"></div>
+<div class="ctx hidden" id="ctx"></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script src="app.js"></script>
