@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Q-Messenger</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='48' fill='%237c3aed'/><text x='50' y='68' font-size='52' text-anchor='middle' fill='white' font-family='Arial' font-weight='bold'>Q</text></svg>">
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth" class="auth-screen">
+  <div class="auth-card">
+    <div class="logo"><span class="logo-badge">Q</span><h1>Q-Messenger</h1></div>
+    <p class="auth-sub">Твоё пространство для общения ✦</p>
+    <form id="authForm">
+      <label>Имя пользователя</label>
+      <input id="authUser" type="text" placeholder="например, cool_guy" autocomplete="username" maxlength="20">
+      <label>Пароль</label>
+      <input id="authPass" type="password" placeholder="••••••••" autocomplete="current-password">
+      <div class="auth-error" id="authError"></div>
+      <button type="submit" class="btn-primary" id="authBtn">Войти</button>
+    </form>
+    <div class="auth-switch">Нет аккаунта? <a href="#" id="authToggle">Создать</a></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" class="app hidden">
+  <aside class="rail">
+    <div class="rail-logo">Q</div>
+    <div class="rail-sep"></div>
+    <button class="rail-ch active" data-ch="general" title="#general">#</button>
+    <button class="rail-ch" data-ch="gaming" title="#gaming">#</button>
+    <button class="rail-ch" data-ch="random" title="#random">#</button>
+    <div class="rail-spacer"></div>
+    <button class="rail-btn" id="openFriends" title="Друзья">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M16.5 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm-9 1a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0 1.5c-2.33 0-7 1.17-7 3.5V20h14v-3c0-2.33-4.67-3.5-7-3.5Zm9-.3c-.29 0-.62.02-.97.06 1.16.84 1.97 2.03 1.97 3.74V20H24v-2.5c0-2.17-4.34-3.3-6.5-3.3Z"/></svg>
+      <span class="rail-badge hidden" id="reqBadge"></span>
+    </button>
+    <div class="rail-me" id="railMe" title=""></div>
+  </aside>
+
+  <aside class="sidebar">
+    <div class="sidebar-head" id="sideTitle">Текстовые каналы</div>
+    <div class="sidebar-body" id="sideBody"></div>
+    <div class="userbar">
+      <div class="avatar" id="meAvatar"></div>
+      <div class="userbar-info">
+        <div class="userbar-name" id="meName"></div>
+        <div class="userbar-status">В сети</div>
+      </div>
+      <button class="icon-btn" id="logoutBtn" title="Выйти">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5-5-5ZM4 5v14h8v2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8v2H4v14Z" transform="scale(0.9) translate(1.5 1)"/></svg>
+      </button>
+    </div>
+  </aside>
+
+  <main class="chat">
+    <header class="chat-head">
+      <div class="chat-title" id="chatTitle"># general</div>
+      <div class="chat-topic" id="chatTopic"></div>
+    </header>
+    <div class="messages" id="messages"></div>
+    <div class="composer">
+      <input id="input" type="text" placeholder="Написать сообщение…" maxlength="2000" autocomplete="off">
+      <button id="sendBtn" class="send-btn" title="Отправить">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M2.01 21 23 12 2.01 3 2 10l15 2-15 2v7z"/></svg>
+      </button>
+    </div>
+  </main>
+
+  <aside class="members" id="members"></aside>
+
+  <!-- Friends overlay -->
+  <div class="overlay hidden" id="friendsOverlay">
+    <div class="friends-panel">
+      <div class="friends-head">
+        <h2>Друзья</h2>
+        <div class="friend-tabs">
+          <button class="ftab active" data-tab="all">Все</button>
+          <button class="ftab" data-tab="pending">Ожидания <span id="pendCount"></span></button>
+          <button class="ftab" data-tab="add">Добавить друга</button>
+        </div>
+        <button class="icon-btn" id="closeFriends">✕</button>
+      </div>
+      <div class="friends-body" id="friendsBody"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

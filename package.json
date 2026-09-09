@@ -1,0 +1,20 @@
+{
+  "name": "q-messenger",
+  "version": "1.0.0",
+  "description": "Q-Messenger — тёмно-фиолетовый мессенджер на Node.js (Discord-style): друзья, личные сообщения, каналы сервера",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "echo \"no tests\" && exit 0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": ["messenger", "chat", "socket.io"],
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  }
+}
